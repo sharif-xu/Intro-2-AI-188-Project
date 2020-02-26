@@ -12,11 +12,13 @@
 # Pieter Abbeel (pabbeel@cs.berkeley.edu).
 
 
-from util import manhattanDistance
-from game import Directions
-import random, util
+import random
+import util
 
 from game import Agent
+from game import Directions
+from util import manhattanDistance
+
 
 class ReflexAgent(Agent):
     """
