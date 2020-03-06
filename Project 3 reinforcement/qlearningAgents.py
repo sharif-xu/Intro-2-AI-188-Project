@@ -43,7 +43,7 @@ class QLearningAgent(ReinforcementAgent):
         ReinforcementAgent.__init__(self, **args)
 
         "*** YOUR CODE HERE ***"
-
+        self.QValue = util.Counter()
     def getQValue(self, state, action):
         """
           Returns Q(state,action)
@@ -51,8 +51,7 @@ class QLearningAgent(ReinforcementAgent):
           or the Q node value otherwise
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        return self.QValue[(state, action)]
 
     def computeValueFromQValues(self, state):
         """
@@ -62,7 +61,13 @@ class QLearningAgent(ReinforcementAgent):
           terminal state, you should return a value of 0.0.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if not self.getLegalActions(state):
+            return 0.0
+        Qval = float('-inf')
+        for action in self.getLegalActions(state):
+            Qval = max(self.getQValue(state, action), Qval)
+
+        return Qval
 
     def computeActionFromQValues(self, state):
         """
@@ -71,7 +76,14 @@ class QLearningAgent(ReinforcementAgent):
           you should return None.
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        if not self.getLegalActions(state):
+            return None
+        bestActions = list()
+        bestValue = self.getValue(state)
+        for action in self.getLegalActions(state):
+            if self.getQValue(state, action) == bestValue:
+                bestActions.append(action)
+        return random.choice(bestActions)
 
     def getAction(self, state):
         """
@@ -88,8 +100,12 @@ class QLearningAgent(ReinforcementAgent):
         legalActions = self.getLegalActions(state)
         action = None
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
-
+        if not legalActions:
+            return None
+        if util.flipCoin(self.epsilon):
+            action = random.choice(legalActions)
+        else:
+            action = self.getPolicy(state)
         return action
 
     def update(self, state, action, nextState, reward):
@@ -102,7 +118,10 @@ class QLearningAgent(ReinforcementAgent):
           it will be called on your behalf
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        maxQValnext = self.getQValue(nextState, self.getPolicy(nextState))
+        oldQValue = (1 - self.alpha) * self.getQValue(state, action)
+        learningQValue = self.alpha * (reward + self.discount * maxQValnext)
+        self.QValue[(state, action)] = oldQValue + learningQValue
 
     def getPolicy(self, state):
         return self.computeActionFromQValues(state)
@@ -165,14 +184,25 @@ class ApproximateQAgent(PacmanQAgent):
           where * is the dotProduct operator
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        Qvalue = 0.0
+        if action == None:
+            return Qvalue
+        features = self.featExtractor.getFeatures(state, action)
+        for i in features:
+            weight = self.getWeights()[i]
+            Qvalue += weight * features[i]
+        return Qvalue
 
     def update(self, state, action, nextState, reward):
         """
            Should update your weights based on transition
         """
         "*** YOUR CODE HERE ***"
-        util.raiseNotDefined()
+        maxQValnext = self.getQValue(nextState, self.getPolicy(nextState))
+        diff = (reward + self.discount * maxQValnext) - self.getQValue(state, action)
+        features = self.featExtractor.getFeatures(state, action)
+        for i in features:
+            self.weights[i] += self.alpha * diff * features[i]
 
     def final(self, state):
         "Called at the end of each game."
@@ -183,4 +213,8 @@ class ApproximateQAgent(PacmanQAgent):
         if self.episodesSoFar == self.numTraining:
             # you might want to print your weights here for debugging
             "*** YOUR CODE HERE ***"
-            pass
+            print("Number of episode: {0}".format(self.episodesSoFar))
+            print("Learning rate : {0}".format(self.alpha))
+            print("Exploration rate : {0}".format(self.epsilon))
+            print("=======Feature Weights=======")
+            print(self.getWeights())
